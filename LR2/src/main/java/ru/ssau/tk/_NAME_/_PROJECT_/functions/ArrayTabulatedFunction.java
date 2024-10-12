@@ -3,6 +3,7 @@ package ru.ssau.tk._NAME_._PROJECT_.functions;
 import java.util.Arrays;
 public class ArrayTabulatedFunction extends AbstractTabulatedFunction
 {
+    public ArrayTabulatedFunction(){}
     protected double[] xValues;
     protected double[] yValues;
     protected int count;

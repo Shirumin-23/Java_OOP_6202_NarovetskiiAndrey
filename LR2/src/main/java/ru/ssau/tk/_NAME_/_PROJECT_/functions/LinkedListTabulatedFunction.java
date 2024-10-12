@@ -32,11 +32,13 @@ public class LinkedListTabulatedFunction extends ArrayTabulatedFunction {
     }
 
     public LinkedListTabulatedFunction(double[] xValues, double[] yValues) {
+        super();
         for (int i = 0; i < xValues.length; i++)
             addNode(xValues[i], yValues[i]);
     }
 
     public LinkedListTabulatedFunction(MathFunction source, double xFrom, double xTo, int count) {
+        super();
         if (xFrom > xTo) {
             double temp = xFrom;
             xFrom = xTo;
@@ -152,5 +154,29 @@ public class LinkedListTabulatedFunction extends ArrayTabulatedFunction {
         Node left = getNode(floorIndex);
         Node right = left.next;
         return interpolate(x, left.x, right.x, left.y, right.y);
+    }
+    protected Node floorNodeOfX(double x)
+    {
+        if (x < leftBound()){return head;}
+        if (x > rightBound()){return head.prev;}
+        Node current = head;
+        while (current.next != head && current.next.x <= x) {
+            current = current.next;
+        }
+        return current;
+    }
+    @Override
+    public double apply(double x)
+    {
+        if (x < leftBound()) {
+            return extrapolateLeft(x);
+        } else if (x > rightBound()) {
+            return extrapolateRight(x);
+        } else {
+            Node floorNode = floorNodeOfX(x);
+            if (Math.abs(floorNode.x - x) < EPSILON)
+                return floorNode.y;
+            return interpolate(x, floorNode.x, floorNode.next.x, floorNode.y, floorNode.next.y);
+        }
     }
 }
