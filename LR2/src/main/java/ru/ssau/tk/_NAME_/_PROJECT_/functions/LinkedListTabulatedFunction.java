@@ -179,4 +179,52 @@ public class LinkedListTabulatedFunction extends ArrayTabulatedFunction {
             return interpolate(x, floorNode.x, floorNode.next.x, floorNode.y, floorNode.next.y);
         }
     }
+    public void insert(double x, double y)
+    {
+        if (this.head == null) {
+            addNode(x, y);
+            return;
+        }
+        Node currentNode = this.head;
+        do
+        {
+            if (currentNode.x == x)
+            {
+                currentNode.y = y;
+                return;
+            }
+            currentNode = currentNode.next;
+        } while (currentNode != this.head);
+
+        do
+        {
+            if ((currentNode.x < x) && (currentNode.next.x > x))
+            {
+                Node nu_node = new Node(x, y);
+                nu_node.prev = currentNode;
+                nu_node.next = currentNode.next;
+                currentNode.next.prev = nu_node;
+                currentNode.next = nu_node;
+                this.count++;
+                return;
+            }
+            currentNode = currentNode.next;
+        } while (currentNode != this.head);
+
+        Node nu_node = new Node(x, y);
+        if (x < head.x)
+        {
+            nu_node.prev = head.prev;
+            nu_node.next = head;
+            head.prev.next = nu_node;
+            head.prev = nu_node;
+            head = nu_node;
+        } else {
+            nu_node.prev = head.prev;
+            nu_node.next = head;
+            head.prev.next = nu_node;
+            head.prev = nu_node;
+        }
+        this.count++;
+    }
 }
