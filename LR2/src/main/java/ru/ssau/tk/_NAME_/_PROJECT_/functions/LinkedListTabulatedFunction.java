@@ -1,6 +1,7 @@
 package ru.ssau.tk._NAME_._PROJECT_.functions;
 
 public class LinkedListTabulatedFunction extends ArrayTabulatedFunction {
+    protected static final double EPSILON = 1e-9;
     protected static class Node {
         Node next;
         Node prev;
