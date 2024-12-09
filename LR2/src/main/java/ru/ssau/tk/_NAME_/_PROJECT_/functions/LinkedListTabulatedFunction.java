@@ -1,88 +1,166 @@
 package ru.ssau.tk._NAME_._PROJECT_.functions;
 
-public class LinkedListTabulatedFunction extends ArrayTabulatedFunction implements Insertable, Removable {
-    protected static final double EPSILON = 1e-9;
+public class LinkedListTabulatedFunction extends AbstractTabulatedFunction implements Insertable, Removable {
 
-    protected static class Node {
-        Node next;
-        Node prev;
-        double x;
-        double y;
-
-        Node(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
+    private class Node {
+        public Node prev;
+        public Node next;
+        public double x;
+        public double y;
     }
 
     private Node head;
 
-    private void addNode(double x, double y) {
-        Node newNode = new Node(x, y);
-        if (head == null) {
-            head = newNode;
-            head.next = head;
-            head.prev = head;
-        } else {
-            Node last = head.prev;
-            last.next = newNode;
-            newNode.prev = last;
-            newNode.next = head;
-            head.prev = newNode;
-        }
-        count++;
-    }
-
     public LinkedListTabulatedFunction(double[] xValues, double[] yValues) {
-        super();
-        for (int i = 0; i < xValues.length; i++)
+        for (int i = 0; i < xValues.length; ++i) {
             addNode(xValues[i], yValues[i]);
+        }
     }
 
     public LinkedListTabulatedFunction(MathFunction source, double xFrom, double xTo, int count) {
-        super();
         if (xFrom > xTo) {
             double temp = xFrom;
             xFrom = xTo;
             xTo = temp;
         }
-        this.count = count;
-        double step = (xTo - xFrom) / (count - 1);
-        for (int i = 0; i < count; i++) {
-            double x = xFrom + i * step;
-            addNode(x, source.apply(x));
+        if (xFrom == xTo) {
+            for (int i = 0; i < count; ++i) {
+                addNode(xFrom, source.apply(xFrom));
+            }
+        } else {
+            addNode(xFrom, source.apply(xFrom));
+            double step = (xTo - xFrom) / (count - 1);
+            double temp = step;
+            for (int i = 1; i < count - 1; ++i) {
+                addNode(temp, source.apply(temp));
+                temp += step;
+            }
+            addNode(xTo, source.apply(xTo));
         }
     }
 
-    @Override
-    public int getCount() {
-        return count;
-    }
-
-    @Override
-    public double leftBound() {
-        return head.x;
-    }
-
-    @Override
-    public double rightBound() {
-        return head.prev.x;
+    protected void addNode(double x, double y) {
+        if (count == 0) {
+            head = new Node();
+            head.x = x;
+            head.y = y;
+            head.next = head;
+            head.prev = head;
+        } else {
+            Node newEl = new Node();
+            newEl.x = x;
+            newEl.y = y;
+            Node temp = head;
+            while (temp.next != head) temp = temp.next;
+            temp.next = newEl;
+            newEl.prev = temp;
+            newEl.next = head;
+            head.prev = newEl;
+        }
+        ++count;
     }
 
     protected Node getNode(int index) {
-        Node current = head;
-        if (index < count / 2) {
-            for (int i = 0; i < index; i++) {
-                current = current.next;
+        Node temp = head;
+        if (index >= 0) {
+            for (int i = 0; i < index; ++i) {
+                temp = temp.next;
             }
         } else {
-            for (int i = count; i > index; i--) {
-                current = current.prev;
+            index *= -1;
+            for (int i = 0; i < index; ++i) {
+                temp = temp.prev;
             }
         }
-        return current;
+        return temp;
     }
 
+    @Override
+    protected int floorIndexOfX(double x) {
+        if (x > getNode(count - 1).x) return  count - 1;
+        if (x < getNode(0).x) return 0;
+        for (int i = 0; i < count - 1; ++i) {
+            if (getNode(i).x <= x) {
+                if (getNode(i + 1).x > x) {
+                    return i;
+                }
+            }
+        }
+        return count - 1;
+    }
+    protected Node floorNodeOfX(double x) {
+        if (x > getNode(count - 1).x) return getNode(0);
+        if (x < getNode(0).x) return getNode(count - 1);
+        for (int i = 0; i < count - 1; ++i) {
+            if (getNode(i).x < x) {
+                if (getNode(i + 1).x >= x) {
+                    return getNode(i);
+                }
+            }
+        }
+        return getNode(count - 1);
+    }
+    @Override
+    protected double extrapolateLeft(double x) {
+        if (count == 1) return getY(0);
+        return interpolate(x, getX(0), getX(1), getY(0), getY(1));
+    }
+
+    @Override
+    protected double extrapolateRight(double x) {
+        if (count == 1) return getY(0);
+        int k = count - 1;
+        return interpolate(x, getX(k - 1), getX(k), getY(k - 1), getY(k));
+    }
+
+    @Override
+    protected double interpolate(double x, int floorIndex) {
+        if (count == 1) {
+            return getY(0);
+        }
+
+        if (floorIndex < 0 || floorIndex >= count - 1) {
+            return Double.NaN;
+        }
+
+        double leftX = getX(floorIndex);
+        double leftY = getY(floorIndex);
+        double rightX = getX(floorIndex + 1);//Соседняя точка по x
+        double rightY = getY(floorIndex + 1);//Соседняя точка по y
+
+        return interpolate(x, leftX, rightX, leftY, rightY);
+    }
+    protected double interpolate(double x, Node floorNode) {
+        if (count == 1) {
+            return getY(0);
+        }
+
+        double leftX = floorNode.x;
+        double leftY = floorNode.y;
+        double rightX = floorNode.next.x;//Соседняя точка по x
+        double rightY = floorNode.next.y;//Соседняя точка по y
+
+        return interpolate(x, leftX, rightX, leftY, rightY);
+    }
+    @Override
+    public double apply(double x) {
+        //Если x меньше левой границы
+        if (x < getX(0)) {
+            return extrapolateLeft(x);
+        }
+        //Если x больше правой границы
+        if (x > getX(getCount() - 1)) {
+            return extrapolateRight(x);
+        }
+        //Смотрим, есть ли x в таблице
+        int index = indexOfX(x);
+        if (index != -1) {
+            return getY(index);
+        }
+        //Если нет, ищем максимальный x из таблицы, который меньше указанного x
+        Node nodeEl = floorNodeOfX(x);
+        return interpolate(x, nodeEl);
+    }
     @Override
     public double getX(int index) {
         return getNode(index).x;
@@ -100,179 +178,79 @@ public class LinkedListTabulatedFunction extends ArrayTabulatedFunction implemen
 
     @Override
     public int indexOfX(double x) {
-        Node current = head;
-        for (int i = 0; i < count; i++) {
-            if (Math.abs(current.x - x) < EPSILON)
-                return i;
-            current = current.next;
+        for (int i = 0; i < count; ++i) {
+            if(getNode(i).x == x) return i;
         }
         return -1;
     }
 
     @Override
     public int indexOfY(double y) {
-        Node current = head;
-        for (int i = 0; i < count; i++) {
-            if (Math.abs(current.y - y) < EPSILON)
-                return i;
-            current = current.next;
+        for (int i = 0; i < count; ++i) {
+            if(getNode(i).y == y) return i;
         }
         return -1;
     }
 
     @Override
-    protected int floorIndexOfX(double x) {
-        if (x < leftBound()) {
-            return 0;
-        }
-        if (x > rightBound()) {
-            return count;
-        }
-        Node current = head;
-        for (int i = 0; i < count - 1; i++) {
-            if (current.x <= x && current.next.x > x) {
-                return i;
-            }
-            current = current.next;
-        }
-        return count - 1;
+    public double leftBound() {
+        return head.x;
     }
 
     @Override
-    protected double extrapolateLeft(double x) {
-        if (count == 1)
-            return head.y;
-        return interpolate(x, head.x, head.next.x, head.y, head.next.y);
+    public double rightBound() {
+        return head.prev.x;
     }
 
     @Override
-    protected double extrapolateRight(double x) {
-        if (count == 1)
-            return head.y;
-        Node last = head.prev;
-        return interpolate(x, last.prev.x, last.x, last.prev.y, last.y);
-    }
-
-    @Override
-    protected double interpolate(double x, int floorIndex) {
-        if (count == 1) {
-            return head.y;
-        }
-        Node left = getNode(floorIndex);
-        Node right = left.next;
-        return interpolate(x, left.x, right.x, left.y, right.y);
-    }
-
-    protected Node floorNodeOfX(double x) {
-        if (x < leftBound()) {
-            return head;
-        }
-        if (x > rightBound()) {
-            return head.prev;
-        }
-        Node current = head;
-        while (current.next != head && current.next.x <= x) {
-            current = current.next;
-        }
-        return current;
-    }
-
-    @Override
-    public double apply(double x) {
-        if (x < leftBound()) {
-            return extrapolateLeft(x);
-        } else if (x > rightBound()) {
-            return extrapolateRight(x);
-        } else {
-            Node floorNode = floorNodeOfX(x);
-            if (Math.abs(floorNode.x - x) < EPSILON)
-                return floorNode.y;
-            return interpolate(x, floorNode.x, floorNode.next.x, floorNode.y, floorNode.next.y);
-        }
-    }
-
     public void insert(double x, double y) {
-        if (this.head == null) {
+        if (count==0){
             addNode(x, y);
-            return;
-        } else {
-            Node currentNode = this.head;
-
-            // Проверка на существование x и обновление y
-            do {
-                if (Math.abs(currentNode.x - x) < EPSILON) {
-                    currentNode.y = y;
-                    return;
-                }
-                currentNode = currentNode.next;
-            } while (currentNode != this.head);
-
-            // Вставка нового узла в правильное место
-            currentNode = this.head;
-            do {
-                if ((currentNode.x < x) && (currentNode.next.x > x)) {
-                    Node newNode = new Node(x, y);
-                    Node last = currentNode;
-                    newNode.prev = last;
-                    newNode.next = currentNode.next;
-                    last.next = newNode;
-                    currentNode.next.prev = newNode;
-                    this.count++;
-                    return;
-                }
-                currentNode = currentNode.next;
-            } while (currentNode != this.head);
-
-            // Вставка в начало списка
-            if (leftBound() > x) {
-                Node newNode = new Node(x, y);
-                Node last = currentNode.prev;
-                newNode.prev = last;
-                newNode.next = currentNode;
-                last.next = newNode;
-                currentNode.prev = newNode;
-                this.head = newNode;
-                this.count++;
-                return;
-            } else {
-                Node newNode = new Node(x, y);
-                Node last = currentNode.prev;
-                newNode.prev = last;
-                newNode.next = currentNode;
-                last.next = newNode;
-                currentNode.prev = newNode;
-                this.count++;
-                return;
+        }
+        else{
+            int i = 0;
+            while(getX(i) < x && i < count) ++i;
+            if(getX(i) == x){
+                setY(i, y);
+            }
+            else if(i == count){
+                addNode(x, y);
+            }
+            else{
+                Node newEl = new Node();
+                newEl.x = x;
+                newEl.y = y;
+                Node temp = getNode(i);
+                temp.prev.next = newEl;
+                newEl.prev = temp.prev;
+                newEl.next = temp;
+                temp.prev = newEl;
+                ++count;
             }
         }
     }
 
     @Override
     public void remove(int index) {
-        Node currentNode = head;
-
-        if (count == 1) {
+        Node remEl = getNode(index);
+        if(count == 0){
+            head.prev = null;
+            head.next = null;
             head = null;
-        } else if (index == 0) {
-            // Удаление первого элемента
-            head = head.next;
-            head.prev = currentNode.prev;
-            currentNode.prev.next = head;
-        } else {
-            // Поиск элемента по индексу
-            for (int i = 0; i < index; i++) {
-                currentNode = currentNode.next;
-            }
-
-            // Обновление ссылок предыдущего и следующего узлов
-            currentNode.prev.next = currentNode.next;
-            currentNode.next.prev = currentNode.prev;
-
-            // Если удаляем последний элемент
-            if (index == count - 1) {
-                head.prev = currentNode.prev;
-
-            }
         }
+        else if(head == remEl){
+            head = head.next;
+            head.prev.prev.next = head;
+            head.prev = head.prev.prev;
+            remEl.next = null;
+            remEl.prev = null;
+        }
+        else{
+            remEl.prev.next = remEl.next;
+            remEl.next.prev = remEl.prev;
+            remEl.next = null;
+            remEl.prev = null;
+        }
+        --count;
     }
 }

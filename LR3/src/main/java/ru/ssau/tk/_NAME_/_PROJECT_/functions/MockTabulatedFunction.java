@@ -2,8 +2,8 @@ package ru.ssau.tk._NAME_._PROJECT_.functions;
 
 public class MockTabulatedFunction extends AbstractTabulatedFunction
 {
-    private double x0;
-    private double x1;
+    private final double x0;
+    private final double x1;
     private double y0;
     private double y1;
     MockTabulatedFunction (double x0, double x1, double y0, double y1)
@@ -13,11 +13,6 @@ public class MockTabulatedFunction extends AbstractTabulatedFunction
         this.y0 = y0;
         this.y1 = y1;
     }
-
-    public MockTabulatedFunction(double[] doubles, double[] doubles1) {
-
-    }
-
     @Override
     public int getCount() {return 2;}
     @Override
