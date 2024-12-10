@@ -6,7 +6,7 @@ public class MockTabulatedFunction extends AbstractTabulatedFunction
     private double x1;
     private double y0;
     private double y1;
-    MockTabulatedFunction (double x0, double x1, double y0, double y1)
+    public MockTabulatedFunction (double x0, double x1, double y0, double y1)
     {
         this.x0 = x0;
         this.x1 = x1;
@@ -14,9 +14,6 @@ public class MockTabulatedFunction extends AbstractTabulatedFunction
         this.y1 = y1;
     }
 
-    public MockTabulatedFunction(double[] doubles, double[] doubles1) {
-
-    }
 
     @Override
     public int getCount() {return 2;}

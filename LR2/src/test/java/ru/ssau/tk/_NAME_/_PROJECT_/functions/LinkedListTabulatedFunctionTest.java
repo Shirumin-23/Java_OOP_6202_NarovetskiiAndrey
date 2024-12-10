@@ -28,9 +28,20 @@ class LinkedListTabulatedFunctionTest {
             Assertions.assertEquals(1.891, extrapolateRight(x), 0.001);
         }
 
+
+
+
         public void testInterpolate(double x, double leftX, double rightX, double leftY, double rightY) {
             Assertions.assertEquals(-3.166, interpolate(x, leftX, rightX, leftY, rightY), 0.001);
         }
+    }
+    private LinkedListTabulatedFunction function;
+
+    @BeforeEach
+    void setUp() {
+        double[] xValues = {1.0, 2.0, 3.0};
+        double[] yValues = {2.0, 3.0, 5.0};
+        function = new LinkedListTabulatedFunction(xValues, yValues);
     }
 
     private SqrFunction fun = new SqrFunction();
@@ -129,9 +140,17 @@ class LinkedListTabulatedFunctionTest {
     }
 */
     @Test
+    void testInterpolate() {
+        // Тестируем различные случаи интерполяции
+        assertEquals(2.0, function.interpolate(1.0, 0), 0.001); // На первом узле
+        assertEquals(5.0, function.interpolate(3.0, 1), 0.001); // На последнем узле
+        assertEquals(2.5, function.interpolate(1.5, 0), 0.001); // Между 1.0 и 2.0
+        assertEquals(4.0, function.interpolate(2.5, 1), 0.001); // Между 2.0 и 3.0
+    }
+   /* @Test
     public void testInterpolate() {
         obj.testInterpolate(2.5, 0, 3, 1, -4);
-    }
+    }*/
 
     @Test
     void InizialzeArr() {
